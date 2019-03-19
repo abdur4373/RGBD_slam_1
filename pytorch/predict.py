@@ -34,15 +34,11 @@ class DepthPrediction:
 		cropped_img_save = torch.from_numpy(cropped_img).permute(2, 0, 1).unsqueeze(0).float()
 		save_image(cropped_img_save, "cropped_img.jpg")
 
-		# scipy.misc.toimage(cropped_img, cmin = 0.0, cmax = 1.0).save('cropped_img.jpg')
-
 		pytorch_img = torch.from_numpy(cropped_img).permute(2,0,1).unsqueeze(0).float()
 		save_image(pytorch_img, "input_image.jpg")
 		pytorch_img = pytorch_img.cuda()
 
 		pytorch_input = Variable(pytorch_img)
-
-		# print(list(pytorch_input.size()))
 
 		t = time.time()
 
@@ -56,43 +52,32 @@ class DepthPrediction:
 
 		out_img_pred_np = out_img_pred_.cpu().numpy()
 
-		# out_norm_img = out_img_pred / depth_scale
-
-		# print('normalized values')
-		# print(out_norm_img.dtype)
-		#
-		#
-		#
-		# save_image(out_norm_img.data, "output_image.jpg")# normalize=True)
-
-
-
 		return out_img_pred_np
 
 	def export_model(self):
 		x = Variable(torch.randn(1, 3, 228, 304), requires_grad=True).cuda()
-		# x.dtype=torch.FloatTensor.cuda()
+
 		# Export the model
-		torch_out = torch.onnx._export(self.model, x.long(), "depth_pred.onnx", export_params=True)  # model being run
-
-# x model input (or a tuple for multiple inputs)
-# where to save the model (can be a file or file-like object
-# store the trained parameter weights inside the model file
-#
+		torch.onnx._export(self.model, x.long(), "depth_pred.onnx", export_params=True)  # model being run
 
 
-def main_mod(test_image_no):
+def main_mod():  #(test_image_no)
 	# if __name__ == '__main__':
 
 	# depth_gt_out = depth_gt(int(input("Enter image number from 0 to 1448")))
-	depth_gt_out = depth_gt(int(test_image_no))
+	# depth_gt_out = depth_gt(int(test_image_no))
+	# depth_gt_out = depth_gt(test_image_no)
 	prediction = DepthPrediction('NYU_ResNet-UpProj.npy', 1)
 	# print('depth_gt_out')
 	# print(depth_gt_out, depth_gt_out.shape)
 
 	# img = img_as_float(imread(sys.argv[1]))   #orignal
 
-	img = Image.open("test_image.jpg")
+	img = Image.open("test_image.png")
+
+	depth_gt_img = Image.open("depth_gt.png")
+
+	depth_gt_out = depth_gt(depth_gt_img)
 
 	out_img_pred_np = prediction.predict(img)
 
@@ -107,24 +92,29 @@ def main_mod(test_image_no):
 
 	depth_pred_inter = resize_depth_pred(out_img_pred_np)
 
+
+
+
 	# print('depth_pred_inter')
 	# print(depth_pred_inter, depth_pred_inter.shape)
 
 	# print(list(depth_gt_out.shape))
 	# print("GT Depth values {0}" .format(depth_gt_out))
 
-	delta_percent_1, delta_percent_2, delta_percent_3 = delta_calculate(depth_pred_inter, depth_gt_out)
+	# delta_percent_1, delta_percent_2, delta_percent_3 = delta_calculate(depth_pred_inter, depth_gt_out)
+	#
+	# abs_rel = abs_rel_diff(depth_pred_inter, depth_gt_out)
+	#
+	# sqr_rel = sqr_rel_diff(depth_pred_inter, depth_gt_out)
+	#
+	# rmse_lin = rmse_linear(depth_pred_inter, depth_gt_out)
+	#
+	# rmse_l = rmse_log(depth_pred_inter, depth_gt_out)
+	# benchmarks = [delta_percent_1, delta_percent_2, delta_percent_3, abs_rel, sqr_rel, rmse_lin, rmse_l]
+	# # prediction.print_model()
+	#
+	# # prediction.export_model()
+	#
+	# return delta_percent_1, delta_percent_2, delta_percent_3, abs_rel, sqr_rel, rmse_lin, rmse_l
 
-	abs_rel = abs_rel_diff(depth_pred_inter, depth_gt_out)
 
-	sqr_rel = sqr_rel_diff(depth_pred_inter, depth_gt_out)
-
-	rmse_lin = rmse_linear(depth_pred_inter, depth_gt_out)
-
-	rmse_l = rmse_log(depth_pred_inter, depth_gt_out)
-	benchmarks = [delta_percent_1, delta_percent_2, delta_percent_3, abs_rel, sqr_rel, rmse_lin, rmse_l]
-	# prediction.print_model()
-
-	# prediction.export_model()
-
-	return delta_percent_1, delta_percent_2, delta_percent_3, abs_rel, sqr_rel, rmse_lin, rmse_l
